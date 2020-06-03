@@ -1,118 +1,85 @@
 import tensorflow as tf
 import tensorlayer as tl
 
+'''
+class generator(tl.models.Model):
 
-def generator(img_input, au_input, reuse=False):
-    with tf.compat.v1.variable_scope('generator') as vs:
-        if reuse:
-            vs.reuse_variables()
+    def __init__(self):
+        super(generator, self).__init__()
 
-        #yo has been represented as N arrays of size H*W(128*128)
-        au = tf.expand_dims(au_input, axis=1, name='expand_dims1')
-        au = tf.expand_dims(au, axis=2, name='expand_dims2')
-        au = tf.tile(au, multiples=[1,128,128,1], name='tile')
-        x = tf.concat([img_input, au], axis=3, name='concat')
+        w_init = tl.initializers.TruncatedNormal(0, 0.02)
+        b_init = None
+        gamma_init = tf.random_normal_initializer(1.0, 0.02)
+        beta_init = tf.constant_initializer(0.0)
 
-        net = tl.layers.Input(x.shape(), tf.float32, name='input')
-        w_init = tl.initializers.TruncatedNormal(0)
-        b_init = tl.initializers.Constant(0.02)
-        net = tl.layers.Conv2d(n_filter=64, filter_size=(7, 7), strides=(1, 1), W_init=w_init, b_init=b_init, name='conv1')(net)
-        net = tl.layers.InstanceNorm2d(act=tf.nn.relu, name='instance_norm_1')(net)
+        self.conv1 = tl.layers.Conv2d(in_channels=20, n_filter=64, filter_size=(7, 7), strides=(1, 1), W_init=w_init, b_init=b_init, name='conv1')
+        self.instance_norm1 = tl.layers.InstanceNorm2d(name='instance_norm_1', act=tf.nn.relu, gamma_init=gamma_init, beta_init=beta_init, num_features=64)
 
-        net = tl.layers.Conv2d(n_filter=128, filter_size=(4, 4), strides=(2, 2), W_init=w_init, b_init=b_init, name='conv2')(
-            net)
-        net = tl.layers.InstanceNorm2d(act=tf.nn.relu, name='instance_norm_2')(net)
+        self.conv2 = tl.layers.Conv2d(in_channels=64, n_filter=128, filter_size=(4, 4), strides=(2, 2), W_init=w_init, b_init=b_init, name='conv2')
+        self.instance_norm2 = tl.layers.InstanceNorm2d(act=tf.nn.relu, name='instance_norm_2', gamma_init=gamma_init, beta_init=beta_init, num_features=128)
 
-        net = tl.layers.Conv2d(n_filter=256, filter_size=(4, 4), strides=(2, 2), W_init=w_init, b_init=b_init, name='conv3')(
-            net)
-        net = tl.layers.InstanceNorm2d(act=tf.nn.relu, name='instance_norm_3')(net)
+        self.conv3 = tl.layers.Conv2d(in_channels=128, n_filter=256, filter_size=(4, 4), strides=(2, 2), W_init=w_init, b_init=b_init, name='conv3')
+        self.instance_norm3 = tl.layers.InstanceNorm2d(act=tf.nn.relu, name='instance_norm_3', gamma_init=gamma_init, beta_init=beta_init, num_features=256)
 
-        for i in range(1, 7):
-            with tf.compat.v1.variable_scope('resblock'+str(i)):
-                net_ = tl.layers.Conv2d(n_filter=256, filter_size=(3,3), strides=(1,1), name='conv1')(net)
-                net_ = tl.layers.InstanceNorm2d(act=tf.nn.relu, name='instance_norm_1')(net_)
-                net_ = tl.layers.Conv2d(n_filter=256, filter_size=(3,3), strides=(1,1), name='conv1')(net_)
-                net_ = tl.layers.InstanceNorm2d(name='instance_norm_2')(net_)
-
-                net = tf.add(net, net_)
-
-        net = tl.layers.DeConv2d(n_filter=128, filter_size=(4,4), strides=(2,2), name='deconv1')(net)
-        net = tl.layers.InstanceNorm2d(act=tf.nn.relu, name='instance_norm_4')(net)
-
-        net = tl.layers.DeConv2d(n_filter=64, filter_size=(4, 4), strides=(2, 2), name='deconv2')(net)
-        net = tl.layers.InstanceNorm2d(act=tf.nn.relu, name='instance_norm_5')(net)
-
-        net = tl.layers.Conv2d(n_filter=3, filter_size=(7, 7), strides=(1, 1), name='conv4')(net)
-        img_out = tf.tanh(net, name='tanh')
-
-        net = tl.layers.Conv2d(n_filter=1, filter_size=(7, 7), strides=(1, 1), name='conv5')(net)
-        mask_out = tf.sigmoid(net, name='sigmoid')
-
-        return img_out, mask_out
+    def forward(self, x):
+        z = self.conv1(x)
+        z = self.instance_norm1(z)
+        z = self.conv2(z)
+        z = self.instance_norm2(z)
+        z = self.conv3(z)
+        out = self.instance_norm3(z)
+        return out
+'''
 
 def get_generator(shape):
-    w_init = tl.initializers.TruncatedNormal(0)
-    b_init = tl.initializers.Constant(0.02)
+    w_init = tl.initializers.TruncatedNormal(0, 0.02)
+    b_init = None
     ni = tl.layers.Input(shape=shape, name='input')
-    net = tl.layers.Conv2d(n_filter=64, filter_size=(7, 7), strides=(1, 1), W_init=w_init, b_init=b_init, name='conv1')(ni)
+    gamma_init = tf.random_normal_initializer(1.0, 0.02)
+    bate_init = tf.constant_initializer(0.0)
+
+    net = tl.layers.Conv2d(n_filter=64, filter_size=(7, 7), strides=(1, 1), W_init=w_init, b_init=b_init, padding='SAME', name='conv1')(ni)
     net = tl.layers.InstanceNorm2d(act=tf.nn.relu, name='instance_norm_1')(net)
     net = tl.layers.Conv2d(n_filter=128, filter_size=(4, 4), strides=(2, 2), W_init=w_init, b_init=b_init, name='conv2')(net)
     net = tl.layers.InstanceNorm2d(act=tf.nn.relu, name='instance_norm_2')(net)
     net = tl.layers.Conv2d(n_filter=256, filter_size=(4, 4), strides=(2, 2), W_init=w_init, b_init=b_init, name='conv3')(net)
     net = tl.layers.InstanceNorm2d(act=tf.nn.relu, name='instance_norm_3')(net)
+
     for i in range(1, 7):
-        net_old = net
-        net = tl.layers.Conv2d(n_filter=256, filter_size=(3, 3), strides=(1, 1), name='conv1')(net)
-        net = tl.layers.InstanceNorm2d(act=tf.nn.relu, name='instance_norm_1')(net)
-        net = tl.layers.Conv2d(n_filter=256, filter_size=(3, 3), strides=(1, 1), name='conv1')(net)
-        net = tl.layers.InstanceNorm2d(name='instance_norm_2')(net)
-        net = tf.add(net_old, net)
-    net = tl.layers.DeConv2d(n_filter=128, filter_size=(4, 4), strides=(2, 2), name='deconv1')(net)
+        nn = tl.layers.Conv2d(n_filter=256, filter_size=(3, 3), strides=(1, 1), W_init=w_init, name='conv1_res'+str(i))(net)
+        nn = tl.layers.InstanceNorm2d(act=tf.nn.relu, name='instance_norm_1_res'+str(i))(nn)
+        nn = tl.layers.Conv2d(n_filter=256, filter_size=(3, 3), strides=(1, 1), W_init=w_init, name='conv2_res'+str(i))(nn)
+        nn = tl.layers.InstanceNorm2d(name='instance_norm_2_res'+str(i))(nn)
+        nn = tl.layers.Elementwise(combine_fn=tf.add, name='elementwise1_res'+str(i))([net, nn])
+        net = nn
+
+    net = tl.layers.DeConv2d(n_filter=128, filter_size=(4, 4), strides=(2, 2), W_init=w_init, name='deconv1')(net)
     net = tl.layers.InstanceNorm2d(act=tf.nn.relu, name='instance_norm_4')(net)
 
-    net = tl.layers.DeConv2d(n_filter=64, filter_size=(4, 4), strides=(2, 2), name='deconv2')(net)
+    net = tl.layers.DeConv2d(n_filter=64, filter_size=(4, 4), strides=(2, 2), W_init=w_init, name='deconv2')(net)
     net = tl.layers.InstanceNorm2d(act=tf.nn.relu, name='instance_norm_5')(net)
 
-    net = tl.layers.Conv2d(n_filter=3, filter_size=(7, 7), strides=(1, 1), name='conv4')(net)
-    img_out = tf.tanh(net, name='tanh')
+    img_out = tl.layers.Conv2d(n_filter=3, filter_size=(7, 7), act=tf.tanh, strides=(1, 1), W_init=w_init, name='conv4')(net)
 
-    net = tl.layers.Conv2d(n_filter=1, filter_size=(7, 7), strides=(1, 1), name='conv5')(net)
-    mask_out = tf.sigmoid(net, name='sigmoid')
+    mask_out = tl.layers.Conv2d(n_filter=1, filter_size=(7, 7), act=tf.sigmoid, strides=(1, 1), W_init=w_init, name='conv5')(net)
 
-    return tl.models.Model(inputs=ni, outputs=(img_out, mask_out))
+    return tl.models.Model(inputs=ni, outputs=([img_out, mask_out]))
 
 
-def discriminator(input, reuse=False):
-    with tf.compat.v1.variable_scope('discriminator') as vs:
-        if reuse:
-            vs.reuse_variables()
-
-        net = tl.layers.Input(input.shape(), tf.float32, name='input')
-        for i in range(1, 7):
-            net = tl.layers.Conv2d(n_filter=64*(2**i), filter_size=(4,4), strides=(2,2), name='conv'+str(i+1))(net)
-            net = tf.nn.leaky_relu(alpha=0.01, name='LReLU'+str(i+1))(net)
-
-        img_out = tl.layers.Conv2d(n_filter=1, filter_size=(3, 3), strides=(1,1), name='conv7')
-        au_out = tl.layers.Conv2d(n_filter=17, filter_size=(2, 2), strides=(1, 1), name='conv8')
-        au_out = tf.squeeze(au_out, [1,2], name='squeeze1')
-        return img_out, au_out
 
 def get_discriminator(input_shape):
+    w_init = tl.initializers.TruncatedNormal(0, 0.02)
+    lrelu = lambda x: tf.nn.leaky_relu(x, 0.01)
 
     ni = tl.layers.Input(input_shape, name='input')
-    net = tl.layers.Conv2d(n_filter=64 * (2 ** 1), filter_size=(4, 4), strides=(2, 2),
-                           name='conv1')(ni)
-    net = tf.nn.leaky_relu(alpha=0.01, name='LReLU1')(net)
+    net = ni
+    for i in range(6):
+        net = tl.layers.Conv2d(n_filter=64*(2**i), filter_size=(4, 4), strides=(2, 2), W_init=w_init, act=lrelu, name='conv' + str(i+1))(net)
 
-    for i in range(2, 7):
-        net = tl.layers.Conv2d(n_filter=64 * (2 ** i), filter_size=(4, 4), strides=(2, 2),
-                               name='conv' + str(i + 1))(net)
-        net = tf.nn.leaky_relu(alpha=0.01, name='LReLU' + str(i + 1))(net)
-
-    img_out = tl.layers.Conv2d(n_filter=1, filter_size=(3, 3), strides=(1, 1), name='conv7')(net)
-    au_out = tl.layers.Conv2d(n_filter=17, filter_size=(2, 2), strides=(1, 1), name='conv8')(net)
-    au_out = tf.squeeze(au_out, [1, 2], name='squeeze1')
-    return tl.models.Model(inputs=ni, outputs=(img_out, au_out))
+    img_out = tl.layers.Conv2d(n_filter=1, filter_size=(3, 3), strides=(1, 1), W_init=w_init, name='conv7')(net)
+    au_out = tl.layers.Conv2d(n_filter=17, filter_size=(2, 2), strides=(1, 1), W_init=w_init, name='conv8')(net)
+    #au_out = tf.squeeze(input=au_out, axis=[1, 2], name='squeeze1')
+    return tl.models.Model(inputs=ni, outputs=([img_out, au_out]))
 
 
 

@@ -24,12 +24,6 @@ def load_data(face_img_path, aus_pkl_path):
         img = cv2.imread(os.path.join(face_img_path, img_name))[:, :, ::-1]  # BGR -> RGB
         img = img / 127.5 - 1  # rescale within [-1,1]
         imgs[i] = img
-        print(img_name)
-        img_id = str(os.path.splitext(os.path.basename(img_name))[0])
-        print(img_id)
-        id = img_name.split('.')[0]
-        print(id)
         aus[i] = aus_dict[img_name.split('.')[0]] / 5
-        print(aus[i])
 
     return imgs, aus
