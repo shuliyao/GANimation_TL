@@ -20,12 +20,7 @@ Reference: https://github.com/hao-qiang/GANimation-tf
 
 Re-implement model in TensorLayer
 
-## Training
+## Run
 ```
-python train.py
-```
-
-## Testing
-```
-python test.py
+python main.py
 ```
