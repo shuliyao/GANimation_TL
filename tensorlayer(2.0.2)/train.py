@@ -6,13 +6,11 @@ import numpy as np
 from model import get_generator, get_discriminator
 from data import load_data
 import time
-import pickle
-
 
 # hyper-parameters
 #face_dir = 'data/imgs_celebA/'
-face_dir = 'data/imgs_test/'
-au_dir = 'data/aus_openface.pkl'
+face_dir = '../data/imgs_test/'
+au_dir = '../data/aus_openface.pkl'
 
 BATCH_SIZE = 25
 EPOCHS = 30
@@ -92,23 +90,28 @@ def train():
                 fake_img_masked = fake_mask * real_img + (1 - fake_mask) * fake_img
 
                 g_input_cyc = preprocess_data(fake_img_masked, real_au)
-                cyc_img, cyc_mask = G(g_input_cyc)
+                [cyc_img, cyc_mask] = G(g_input_cyc)
                 cyc_img_masked = cyc_mask * fake_img_masked + (1 - cyc_mask) * cyc_img
 
                 # D(real_I)
-                pred_real_img, pred_real_au = D(real_img, reuse=False)
+                [pred_real_img, pred_real_au] = D(real_img)
                 # D(fake_I)
-                pred_fake_img_masked, pred_fake_au = D(fake_img_masked, reuse=True)
+                [pred_fake_img_masked, pred_fake_au] = D(fake_img_masked)
+                pred_real_au = tf.squeeze(input=pred_real_au, axis=[1, 2])
+                pred_fake_au = tf.squeeze(input=pred_fake_au, axis=[1, 2])
 
                 # loss
                 loss_d_img = -tf.reduce_mean(pred_real_img) * lambda_D_img + tf.reduce_mean(
                     pred_fake_img_masked) * lambda_D_img
                 loss_d_au = l2_loss(real_au, pred_real_au) * lambda_D_au
 
-                alpha = tf.compat.v1.random_uniform([BATCH_SIZE, 1, 1, 1], minval=0., maxval=1.)
-                differences = fake_img_masked - real_img
-                interpolates = real_img + tf.multiply(alpha, differences)
-                gradients = tf.gradients(D(interpolates, reuse=True), [interpolates])[0]
+                with tf.GradientTape(persistent=True) as tape1:
+                    alpha = tf.compat.v1.random_uniform([BATCH_SIZE, 1, 1, 1], minval=0., maxval=1.)
+                    differences = fake_img_masked - real_img
+                    interpolates = real_img + tf.multiply(alpha, differences)
+                    out = D(interpolates)
+                gradients = tape1.gradient(out, [interpolates])
+                del tape1
                 slopes = tf.sqrt(tf.reduce_sum(tf.square(gradients), axis=1))
                 gradient_penalty = tf.reduce_mean((slopes - 1.) ** 2)
                 loss_d_gp = lambda_D_gp * gradient_penalty
@@ -130,17 +133,19 @@ def train():
                     desired_au = au_rand[i * BATCH_SIZE:(i + 1) * BATCH_SIZE]
 
                     g_input_f = preprocess_data(real_img, desired_au)
-                    fake_img, fake_mask = G(g_input_f)
+                    [fake_img, fake_mask] = G(g_input_f)
                     fake_img_masked = fake_mask * real_img + (1 - fake_mask) * fake_img
                     # G(G(Ic1, c2)*M, c1) * M
                     g_input_cyc = preprocess_data(fake_img_masked, real_au)
-                    cyc_img, cyc_mask = G(g_input_cyc)
+                    [cyc_img, cyc_mask] = G(g_input_cyc)
                     cyc_img_masked = cyc_mask * fake_img_masked + (1 - cyc_mask) * cyc_img
 
                     # D(real_I)
-                    pred_real_img, pred_real_au = D(real_img)
+                    [pred_real_img, pred_real_au] = D(real_img)
                     # D(fake_I)
-                    pred_fake_img_masked, pred_fake_au = D(fake_img_masked)
+                    [pred_fake_img_masked, pred_fake_au] = D(fake_img_masked)
+                    pred_real_au = tf.squeeze(input=pred_real_au, axis=[1, 2])
+                    pred_fake_au = tf.squeeze(input=pred_fake_au, axis=[1, 2])
 
                     # loss
                     loss_g_fake_img_masked = -tf.reduce_mean(pred_fake_img_masked) * lambda_D_img

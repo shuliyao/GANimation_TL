@@ -25,7 +25,7 @@ if __name__ == '__main__':
     tl.files.load_and_assign_npz(name=D_path, network=D)
 
     imgs_names = os.listdir('test_face')
-    real_src = face_recognition.load_image_file('obama.jpeg')  # RGB image
+    real_src = face_recognition.load_image_file('test.jpeg')  # RGB image
     face_loc = face_recognition.face_locations(real_src)
 
     top, right, bottom, left = face_loc[0]
