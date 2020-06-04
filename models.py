@@ -16,10 +16,10 @@ def generator(real_img, desired_au, reuse=False):
         tl.layers.set_name_reuse(reuse)
 
         #au[None, 17] -> au[None, 128, 128, 17]
-        desired_au = tf.expand_dims(desired_au, axis=1, name='ExpandDims1')
-        desired_au = tf.expand_dims(desired_au, axis=2, name='ExpandDims2')
-        desired_au = tf.tile(desired_au, multiples=[1, 128, 128, 1], name='Tile')
-        x = tf.concat([real_img, desired_au], axis=3, name='Concat')#x[None, 128, 128, 20]
+        desired_au = tf.expand_dims(desired_au, axis=1, name='expand_dims1')
+        desired_au = tf.expand_dims(desired_au, axis=2, name='expand_dims2')
+        desired_au = tf.tile(desired_au, multiples=[1, 128, 128, 1], name='tile')
+        x = tf.concat([real_img, desired_au], axis=3, name='concat')#x[None, 128, 128, 20]
 
         #Down-Sampling
         ni = tl.layers.InputLayer(x, name='input')
